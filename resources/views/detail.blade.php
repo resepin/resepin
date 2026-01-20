@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="container pb-5">
-    <a href="{{ route('home') }}" class="btn btn-light rounded-pill mb-4 shadow-sm">
+    <a href="javascript:history.back()" class="btn btn-light rounded-pill mb-4 shadow-sm">
         <i class="bi bi-arrow-left me-2"></i>Kembali
     </a>
 

@@ -4,7 +4,7 @@
 <div class="container">
     
     <div class="text-center mb-5">
-        <h6 class="text-uppercase text-muted fw-bold">Bahan yang kamu punya:</h6>
+        <h6 class="text-uppercase text-muted fw-bold">Bahan Terdeteksi AI:</h6>
         <div class="d-flex justify-content-center flex-wrap gap-2 mt-2">
             @foreach($ingredients as $item)
                 <span class="badge bg-success bg-opacity-10 text-success border border-success px-4 py-2 rounded-pill fs-6">
@@ -22,7 +22,7 @@
                     <img src="{{ $meal['image'] }}" class="card-img-top" alt="{{ $meal['title'] }}" style="height: 200px; object-fit: cover;">
                     <div class="position-absolute top-0 end-0 p-2">
                         <span class="badge bg-white text-dark shadow-sm">
-                            <i class="bi bi-heart-fill text-danger"></i> {{ $meal['likes'] }}
+                            <i class="bi bi-heart-fill text-danger"></i> {{ $meal['aggregateLikes'] ?? 0 }}
                         </span>
                     </div>
                 </div>
@@ -51,14 +51,16 @@
         <div class="col-12 text-center py-5">
             <div class="text-muted">
                 <i class="bi bi-emoji-dizzy display-1"></i>
-                <p class="mt-3">Waduh, AI bingung mau masak apa dengan bahan itu.</p>
+                <p class="mt-3 lead">Yah, tidak ada resep yang cocok.</p>
+                <small>Mungkin filter kamu terlalu ketat? Coba hilangkan filter 'Pedas' atau 'Vegetarian'.</small>
             </div>
+            <a href="{{ route('home') }}" class="btn btn-primary mt-3">Coba Lagi</a>
         </div>
         @endforelse
     </div>
     
     <div class="text-center mt-5">
-        <a href="/" class="text-decoration-none text-muted"><i class="bi bi-arrow-left"></i> Foto ulang</a>
+        <a href="{{ route('home') }}" class="text-decoration-none text-muted"><i class="bi bi-arrow-left"></i> Foto ulang</a>
     </div>
 </div>
 @endsection
