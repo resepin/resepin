@@ -21,9 +21,21 @@
                 <div class="position-relative">
                     <img src="{{ $meal['image'] }}" class="card-img-top" alt="{{ $meal['title'] }}" style="height: 200px; object-fit: cover;">
                     <div class="position-absolute top-0 end-0 p-2">
-                        <span class="badge bg-white text-dark shadow-sm">
-                            <i class="bi bi-heart-fill text-danger"></i> {{ $meal['aggregateLikes'] ?? 0 }}
-                        </span>
+                        @php
+                            $isFav = Auth::check() && in_array($meal['id'], $favoriteIds);
+                        @endphp
+                    
+                        <button 
+                            class="btn btn-light rounded-circle shadow-sm p-2 d-flex align-items-center justify-content-center btn-fav" 
+                            style="width: 40px; height: 40px;"
+                            title="Simpan ke Favorit"
+                            onclick="toggleFavorite(this)" 
+                            data-id="{{ $meal['id'] }}"
+                            data-title="{{ $meal['title'] }}"
+                            data-image="{{ $meal['image'] }}">
+                            
+                            <i class="bi {{ $isFav ? 'bi-heart-fill text-danger' : 'bi-heart text-secondary' }} fs-5"></i>
+                        </button>
                     </div>
                 </div>
                 
@@ -61,6 +73,6 @@
     
     <div class="text-center mt-5">
         <a href="{{ route('home') }}" class="text-decoration-none text-muted"><i class="bi bi-arrow-left"></i> Foto ulang</a>
-    </div>
+    </div>  
 </div>
 @endsection

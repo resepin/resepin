@@ -11,7 +11,6 @@ A smart, AI-powered recipe finder application built with Laravel and YOLOv8 that
 * **Spiciness Control:** Automatically filter out spicy recipes based on user preference.
 
 ### 🎨 User Experience
-* **Scan History:** Automatically saves your scan results so you can revisit them anytime.
 * **Favorites System:** Save your loved recipes to a personal cookbook.
 * **Secure Authentication:** Complete Login & Register system powered by Laravel Breeze.
 * **Responsive Design:** Optimized for both desktop and mobile experiences using Tailwind CSS.
@@ -23,8 +22,8 @@ A smart, AI-powered recipe finder application built with Laravel and YOLOv8 that
 ### Prerequisites
 * **PHP 8.1+** & **Composer**
 * **Node.js 16.x** or later
-* **MySQL** (XAMPP/Laragon)
-* **Python 3.x** (Optional, only for local AI development)
+* **MySQL**
+* **Python 3.x**
 
 ### Installation
 
@@ -77,15 +76,11 @@ A smart, AI-powered recipe finder application built with Laravel and YOLOv8 that
 ## 🛠️ Technical Details
 
 ### Tech Stack
-* **Frontend:** Laravel Blade, Tailwind CSS
-* **Backend:** Laravel 11 (PHP)
-* **AI Engine:** YOLOv8 (Python/Flask)
+* **Frontend:** Laravel Blade & Bootstrap 5
+* **Backend:** Laravel 12
+* **AI Engine:** YOLOv8
 * **Database:** MySQL
 * **External API:** Spoonacular
-
-### Deployment
-* **Web App:** Ready for Shared Hosting, VPS, or Railway.
-* **AI Model:** Deployed on **Microsoft Azure Web App**.
 
 ---
 
@@ -99,5 +94,4 @@ A smart, AI-powered recipe finder application built with Laravel and YOLOv8 that
 
 ---
 
-Made with ❤️ and 🌶️ by **Resepin Team**
-*Transform any ingredient into a 5-star meal!* 🍳✨
+Made with ❤️ by **Resepin Team**
