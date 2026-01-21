@@ -6,8 +6,9 @@
     
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>Resepin</title>
-    <link rel="icon" href="{{ asset('img/resepin-logo.png') }}" type="image/x-icon">
+    <title>Resep.in</title>
+    
+    <link rel="icon" href="{{ asset('img/resepin-logo-white.png') }}" type="image/x-icon">
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
@@ -19,6 +20,12 @@
 
     <style>
         body { font-family: 'Poppins', sans-serif; }
+        
+        /* SOLUSI AGAR TIDAK GESER KE KANAN */
+        html {
+            overflow-y: scroll; /* Memaksa scrollbar selalu muncul */
+        }
+
         .oranye { color: #fd7e14; font-weight: bold; }
         .navbar-nav .nav-link { font-weight: 500; color: #555; }
         .navbar-nav .nav-link:hover { color: #fd7e14; }
@@ -30,9 +37,12 @@
 
     <nav class="navbar navbar-expand-lg fixed-top bg-white shadow-sm py-3">
       <div class="container">
-        <a class="navbar-brand fs-4 fw-bold" href="{{ route('home') }}">
-            Resep<span class="oranye">.in</span>
+        
+        <a class="navbar-brand fs-4 fw-bold d-flex align-items-center" href="{{ route('home') }}">
+            <img src="{{ asset('img/resepin-logo-white.png') }}" alt="Logo" style="height: 40px; margin-right: 10px;">
+            <span>Resep<span class="oranye">.in</span></span>
         </a>
+
         <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -105,7 +115,6 @@
             if (!tokenMeta) return; 
             let token = tokenMeta.getAttribute('content');
             
-            // Efek Loading
             btn.style.opacity = "0.7";
             btn.style.pointerEvents = "none";
 
@@ -125,7 +134,7 @@
             .then(response => {
                 if (response.status === 401) {
                     alert("Silakan login dulu!");
-                    // window.location.href = "{{ route('login') }}";
+                    window.location.href = "{{ route('login') }}";
                     throw new Error("Unauthorized");
                 }
                 return response.json();
@@ -133,7 +142,6 @@
             .then(data => {
                 if (data.status === 'success') {
                     
-                    // Logic Ganti Tampilan Tombol
                     if (btn.classList.contains('btn-fav')) {
                         let icon = btn.querySelector('i');
                         if (data.action === 'added') {
@@ -158,13 +166,11 @@
                         }
                     }
 
-                    // --- MUNCULKAN NOTIFIKASI ---
                     let toastEl = document.getElementById('favToast');
                     let toastText = document.getElementById('toast-text');
                     
                     if(toastEl) {
                         toastText.innerText = data.message;
-                        
                         if (data.action === 'removed') {
                             toastEl.classList.remove('bg-success');
                             toastEl.classList.add('bg-secondary');
@@ -172,8 +178,6 @@
                             toastEl.classList.remove('bg-secondary');
                             toastEl.classList.add('bg-success');
                         }
-
-                        // Init & Show Toast (Perlu Bootstrap JS)
                         let toast = new bootstrap.Toast(toastEl);
                         toast.show();
                     }

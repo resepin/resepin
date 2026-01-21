@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="container py-5">
-    <div class="col-md-5 mx-auto">
+    <div class="col-md-6 mx-auto">
         <div class="card shadow border-0 rounded-4">
             <div class="card-body p-5">
                 <h3 class="fw-bold mb-4 text-center">Login</h3>

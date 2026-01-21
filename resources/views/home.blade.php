@@ -13,7 +13,7 @@
 
             <h1 class="display-4 fw-bold mb-3">Ada bahan apa<br>di kulkas?</h1>
             <p class="lead text-muted mb-5">
-                Upload foto bahan makananmu, biar <span class="navbar-brand fw-bold">Resep<span class="text-warning">.in</span></span> carikan resepnya.
+                Upload foto bahan makananmu, biar <span class="navbar-brand fw-bold">Resep<span class="oranye">.in</span></span> carikan resepnya.
             </p>
 
             <form action="{{ route('analyze') }}" method="POST" enctype="multipart/form-data">
