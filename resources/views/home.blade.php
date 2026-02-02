@@ -85,30 +85,224 @@
                     </div>
                 </div>
 
-                <button type="submit" class="btn btn-primary btn-lg w-100 py-3 shadow-lg fw-bold">
+                <button type="submit" id="submit-btn" class="btn btn-primary btn-lg w-100 py-3 shadow-lg fw-bold">
                     🔍 Cari Resep
                 </button>
+                
+                <!-- Status indicator untuk eager loading -->
+                <div id="loading-status" class="mt-3 text-center d-none">
+                    <div class="d-flex align-items-center justify-content-center gap-2">
+                        <div id="loading-spinner" class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                        <span id="loading-text" class="text-muted small">Memproses...</span>
+                    </div>
+                </div>
             </form>
         </div>
     </div>
 </div>
 
 <script>
+    // ============================================
+    // 🚀 EAGER LOADING - Sub-100ms "Cari Resep"
+    // ============================================
+    // Strategi: Panggil API OTOMATIS saat upload gambar
+    // Sehingga saat klik "Cari Resep" → data sudah ready!
+    
+    let cachedData = null;       // Hasil akhir (ingredients + recipes)
+    let isProcessing = false;    // Sedang proses?
+    let currentFile = null;      // File yang sedang diproses
+
     function previewImage(event) {
-        var reader = new FileReader();
-        reader.onload = function(){
-            var output = document.getElementById('image-preview');
-            var placeholder = document.getElementById('upload-placeholder');
-            
-            // Tampilkan gambar, sembunyikan placeholder icon
-            output.src = reader.result;
-            output.style.display = 'block';
-            placeholder.style.display = 'none';
+        const file = event.target.files[0];
+        if (!file) return;
+
+        currentFile = file;
+
+        // Tampilkan preview gambar
+        const reader = new FileReader();
+        reader.onload = function() {
+            document.getElementById('image-preview').src = reader.result;
+            document.getElementById('image-preview').style.display = 'block';
+            document.getElementById('upload-placeholder').style.display = 'none';
         };
-        // Baca file yang diupload
-        if(event.target.files[0]){
-            reader.readAsDataURL(event.target.files[0]);
+        reader.readAsDataURL(file);
+
+        // 🔥 LANGSUNG PROSES OTOMATIS!
+        startEagerLoading(file);
+    }
+
+    async function startEagerLoading(file) {
+        // Reset state
+        cachedData = null;
+        isProcessing = true;
+        
+        const status = document.getElementById('loading-status');
+        const spinner = document.getElementById('loading-spinner');
+        const text = document.getElementById('loading-text');
+        const btn = document.getElementById('submit-btn');
+        const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+        // Tampilkan status
+        status.classList.remove('d-none');
+        spinner.classList.remove('d-none');
+        text.textContent = '🔍 AI sedang mengenali bahan...';
+        btn.innerHTML = '⏳ Tunggu sebentar...';
+
+        try {
+            // ========== STEP 1: Azure AI ==========
+            const formData = new FormData();
+            formData.append('image', file);
+
+            const aiResponse = await fetch('/api/analyze-image', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrf,
+                    'Accept': 'application/json'
+                },
+                body: formData
+            });
+
+            const aiData = await aiResponse.json();
+
+            if (!aiResponse.ok || !aiData.success) {
+                throw new Error(aiData.error || 'Gagal menganalisis gambar');
+            }
+
+            const ingredients = aiData.ingredients;
+            text.textContent = '✅ ' + ingredients.length + ' bahan ditemukan! Mencari resep...';
+
+            // ========== STEP 2: Spoonacular ==========
+            const filters = getFilters();
+            filters.ingredients = ingredients;
+
+            const recipeResponse = await fetch('/api/search-recipes', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrf,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(filters)
+            });
+
+            const recipeData = await recipeResponse.json();
+
+            if (!recipeResponse.ok || !recipeData.success) {
+                throw new Error(recipeData.error || 'Gagal mencari resep');
+            }
+
+            // ========== SUKSES! ==========
+            cachedData = recipeData;
+            isProcessing = false;
+            
+            spinner.classList.add('d-none');
+            text.innerHTML = '✅ <strong>' + (recipeData.recipes?.length || 0) + ' resep siap!</strong> Klik tombol di bawah.';
+            btn.innerHTML = '🚀 Lihat Resep (Instan!)';
+            btn.classList.remove('btn-primary');
+            btn.classList.add('btn-success');
+
+        } catch (err) {
+            isProcessing = false;
+            spinner.classList.add('d-none');
+            text.innerHTML = '⚠️ ' + err.message + ' <a href="#" onclick="retryEagerLoading()">Coba lagi</a>';
+            btn.innerHTML = '🔍 Cari Resep';
         }
     }
+
+    function retryEagerLoading() {
+        if (currentFile) {
+            startEagerLoading(currentFile);
+        }
+        return false;
+    }
+
+    function getFilters() {
+        return {
+            is_halal: document.getElementById('halal').checked,
+            no_spicy: document.getElementById('spicy').checked,
+            custom_exclude: document.querySelector('input[name="custom_exclude"]').value,
+            diets: [...document.querySelectorAll('input[name="diets[]"]:checked')].map(e => e.value)
+        };
+    }
+
+    // Re-fetch recipes saat filter berubah (dengan debounce)
+    let filterDebounce = null;
+    function onFilterChange() {
+        if (!cachedData || !cachedData.ingredients) return;
+        
+        clearTimeout(filterDebounce);
+        filterDebounce = setTimeout(async () => {
+            const text = document.getElementById('loading-text');
+            const spinner = document.getElementById('loading-spinner');
+            const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            
+            spinner.classList.remove('d-none');
+            text.textContent = '🔄 Mengupdate filter...';
+
+            try {
+                const filters = getFilters();
+                filters.ingredients = cachedData.ingredients;
+
+                const response = await fetch('/api/search-recipes', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrf,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(filters)
+                });
+
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    cachedData = data;
+                    text.innerHTML = '✅ <strong>' + (data.recipes?.length || 0) + ' resep</strong> dengan filter baru!';
+                }
+            } catch (e) {
+                text.textContent = '⚠️ Gagal update filter';
+            }
+            spinner.classList.add('d-none');
+        }, 500);
+    }
+
+    // Pasang listener ke semua filter
+    document.getElementById('halal').addEventListener('change', onFilterChange);
+    document.getElementById('spicy').addEventListener('change', onFilterChange);
+    document.querySelector('input[name="custom_exclude"]').addEventListener('input', onFilterChange);
+    document.querySelectorAll('input[name="diets[]"]').forEach(el => el.addEventListener('change', onFilterChange));
+
+    // ========== FORM SUBMIT HANDLER ==========
+    document.querySelector('form').addEventListener('submit', function(e) {
+        // Jika data sudah ready → INSTANT REDIRECT! (<100ms)
+        if (cachedData && cachedData.success) {
+            e.preventDefault();
+            
+            const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            
+            // Buat hidden form untuk POST data
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/api/show-cached';
+            form.innerHTML = `
+                <input type="hidden" name="_token" value="${csrf}">
+                <input type="hidden" name="cached_data" value='${JSON.stringify(cachedData)}'>
+            `;
+            document.body.appendChild(form);
+            form.submit();
+            return;
+        }
+
+        // Jika masih processing → tampilkan pesan
+        if (isProcessing) {
+            e.preventDefault();
+            alert('Tunggu sebentar, AI masih menganalisis gambar...');
+            return;
+        }
+
+        // Tidak ada cache (user belum upload) → submit normal
+        const btn = document.getElementById('submit-btn');
+        btn.innerHTML = '⏳ Memproses...';
+        btn.disabled = true;
+    });
 </script>
 @endsection

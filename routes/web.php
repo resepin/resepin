@@ -32,3 +32,8 @@ Route::get('/resep/{id}', [ResepController::class, 'show'])->name('resep.show');
 Route::get('/analyze', function() {
     return redirect()->route('home')->with('info', 'Halaman hasil telah kadaluarsa. Silakan scan ulang.');
 });
+
+// API untuk Eager Loading (dipanggil otomatis saat upload gambar)
+Route::post('/api/analyze-image', [ResepController::class, 'analyzeImage']);
+Route::post('/api/search-recipes', [ResepController::class, 'searchRecipes']);
+Route::post('/api/show-cached', [ResepController::class, 'showCached']);
