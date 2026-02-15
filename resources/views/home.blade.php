@@ -103,32 +103,102 @@
 
 <script>
     // ============================================
-    // 🚀 EAGER LOADING - Sub-100ms "Cari Resep"
+    // 🚀 EAGER LOADING + AUTO COMPRESSION
     // ============================================
-    // Strategi: Panggil API OTOMATIS saat upload gambar
-    // Sehingga saat klik "Cari Resep" → data sudah ready!
     
     let cachedData = null;       // Hasil akhir (ingredients + recipes)
     let isProcessing = false;    // Sedang proses?
     let currentFile = null;      // File yang sedang diproses
 
-    function previewImage(event) {
-        const file = event.target.files[0];
-        if (!file) return;
+    // 🌟 FUNGSI BARU: Mengompresi Gambar via Canvas
+    function compressImage(file, maxWidth, maxHeight, quality) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = event => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
 
-        currentFile = file;
+                    // Hitung rasio aspek agar gambar tidak gepeng
+                    if (width > height) {
+                        if (width > maxWidth) {
+                            height *= maxWidth / width;
+                            width = maxWidth;
+                        }
+                    } else {
+                        if (height > maxHeight) {
+                            width *= maxHeight / height;
+                            height = maxHeight;
+                        }
+                    }
 
-        // Tampilkan preview gambar
-        const reader = new FileReader();
-        reader.onload = function() {
-            document.getElementById('image-preview').src = reader.result;
-            document.getElementById('image-preview').style.display = 'block';
-            document.getElementById('upload-placeholder').style.display = 'none';
-        };
-        reader.readAsDataURL(file);
+                    canvas.width = width;
+                    canvas.height = height;
 
-        // 🔥 LANGSUNG PROSES OTOMATIS!
-        startEagerLoading(file);
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    // Konversi canvas menjadi file Blob (gambar yang sudah kecil)
+                    canvas.toBlob((blob) => {
+                        if (!blob) {
+                            reject(new Error("Canvas to Blob failed"));
+                            return;
+                        }
+                        const newFile = new File([blob], file.name, {
+                            type: 'image/jpeg',
+                            lastModified: Date.now()
+                        });
+                        resolve(newFile);
+                    }, 'image/jpeg', quality); // quality 0.7 = 70%
+                };
+                img.onerror = error => reject(error);
+            };
+            reader.onerror = error => reject(error);
+        });
+    }
+
+    // 🌟 FUNGSI DIUBAH: Menambahkan proses kompresi sebelum preview & AI
+    async function previewImage(event) {
+        const originalFile = event.target.files[0];
+        if (!originalFile) return;
+
+        const btn = document.getElementById('submit-btn');
+        btn.innerHTML = '🔨 Mengompres gambar...';
+        btn.disabled = true;
+
+        try {
+            // 1. Lakukan Kompresi (Maks 1000px, Kualitas 70%)
+            const compressedFile = await compressImage(originalFile, 1000, 1000, 0.7);
+            currentFile = compressedFile;
+
+            // 2. Tampilkan preview menggunakan gambar hasil kompresi
+            const reader = new FileReader();
+            reader.onload = function() {
+                document.getElementById('image-preview').src = reader.result;
+                document.getElementById('image-preview').style.display = 'block';
+                document.getElementById('upload-placeholder').style.display = 'none';
+            };
+            reader.readAsDataURL(compressedFile);
+
+            // 3. GANTI file di input HTML secara diam-diam
+            // Ini agar jika user submit form biasa, yang terkirim adalah file yang kecil
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(compressedFile);
+            document.getElementById('file-input').files = dataTransfer.files;
+
+            // 4. LANGSUNG PROSES OTOMATIS ke AI menggunakan file kecil!
+            startEagerLoading(compressedFile);
+
+        } catch (error) {
+            console.error("Gagal mengompres gambar:", error);
+            alert("Terjadi kesalahan saat memproses gambar. Coba gunakan foto lain.");
+            btn.innerHTML = '🔍 Cari Resep';
+            btn.disabled = false;
+        }
     }
 
     async function startEagerLoading(file) {
@@ -147,6 +217,7 @@
         spinner.classList.remove('d-none');
         text.textContent = '🔍 AI sedang mengenali bahan...';
         btn.innerHTML = '⏳ Tunggu sebentar...';
+        btn.disabled = true; // Matikan tombol saat AI masih bekerja
 
         try {
             // ========== STEP 1: Azure AI ==========
@@ -200,12 +271,16 @@
             btn.innerHTML = '🚀 Lihat Resep (Instan!)';
             btn.classList.remove('btn-primary');
             btn.classList.add('btn-success');
+            btn.disabled = false; // Hidupkan tombol
 
         } catch (err) {
             isProcessing = false;
             spinner.classList.add('d-none');
             text.innerHTML = '⚠️ ' + err.message + ' <a href="#" onclick="retryEagerLoading()">Coba lagi</a>';
             btn.innerHTML = '🔍 Cari Resep';
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-primary');
+            btn.disabled = false; // Hidupkan tombol untuk coba lagi
         }
     }
 

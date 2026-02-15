@@ -166,11 +166,12 @@ class ResepController extends Controller
                 'includeIngredients' => implode(',', $ingredients),
                 'excludeIngredients' => implode(',', $excludedIngredients),
                 'diet' => $dietString,
-                'number' => 8,
+                'number' => 12,
                 'addRecipeInformation' => true,
                 'fillIngredients' => true,
                 'ignorePantry' => true,
-                'sort' => 'min-missing-ingredients',
+                'sort' => 'max-used-ingredients',
+                'instructionsRequired' => true,
                 'includeNutrition' => true
             ]);
 
