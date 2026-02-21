@@ -1,6 +1,17 @@
 .git
+.github
+.gitignore
 .env
+.env.backup
+.env.production
 vendor
 node_modules
 storage/*.key
+storage/logs/*.log
+tests
 test_db.php
+*.md
+.vscode
+.idea
+__pycache__
+runs
