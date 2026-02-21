@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Client\ConnectionException;
 use App\Models\Favorite;
 
@@ -15,8 +16,8 @@ class ResepController extends Controller
 
     public function __construct()
     {
-        $this->apiKey = env('SPOONACULAR_API_KEY');
-        $this->pythonApiUrl = env('PYTHON_API_URL');
+        $this->apiKey = config('services.spoonacular.api_key');
+        $this->pythonApiUrl = config('services.ingredient_ai.url');
     }
 
     public function index()
@@ -55,7 +56,8 @@ class ResepController extends Controller
         } catch (ConnectionException $e) {
             return back()->with('error', 'Coba upload foto yang lebih kecil atau coba lagi nanti.');
         } catch (\Exception $e) {
-            return back()->with('error', 'Terjadi kesalahan sistem: ' . $e->getMessage());
+            Log::error('Analyze error: ' . $e->getMessage());
+            return back()->with('error', 'Terjadi kesalahan sistem. Silakan coba lagi nanti.');
         }
 
         $clean_ingredients = array_map(fn($item) => str_replace('_', ' ', $item), $detected_ingredients);
@@ -129,7 +131,8 @@ class ResepController extends Controller
         } catch (ConnectionException $e) {
             return response()->json(['success' => false, 'error' => 'Timeout, coba foto lebih kecil'], 408);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+            Log::error('AnalyzeImage API error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => 'Terjadi kesalahan server.'], 500);
         }
     }
 
@@ -190,7 +193,8 @@ class ResepController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+            Log::error('SearchRecipes API error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => 'Gagal mencari resep. Silakan coba lagi.'], 500);
         }
     }
 

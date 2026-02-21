@@ -10,9 +10,8 @@ RUN npm run build
 FROM php:8.2-apache
 
 # 1. Install ONLY runtime system dependencies
-RUN apt-get update && apt-get install -y \
-    libpng-dev libonig-dev libxml2-dev zip unzip git curl \
-    python3 python3-pip \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpng-dev libonig-dev libxml2-dev zip unzip curl \
     && rm -rf /var/lib/apt/lists/*
 
 # 2. Install PHP extensions
