@@ -30,7 +30,7 @@ class ResepController extends Controller
         set_time_limit(120); 
 
         $request->validate([
-            'image' => 'required|image|max:5000',
+            'image' => 'required|image|max:15000',
         ]);
 
         // ---------------------------------------------------------
