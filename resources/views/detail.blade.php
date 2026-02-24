@@ -145,9 +145,55 @@
             <div class="card border-0 bg-white shadow-sm rounded-4 p-4">
                 <h5 class="fw-bold text-primary mb-4"><i class="bi bi-fire me-2"></i>Instruksi Memasak</h5>
                 
-                <div class="instructions-content text-muted" style="line-height: 1.8;">
-                    @if(!empty($meal['instructions']))
-                        {!! $meal['instructions'] !!} 
+                <div class="instructions-content" style="line-height: 1.8;">
+                    @if(!empty($meal['analyzedInstructions']) && count($meal['analyzedInstructions']) > 0)
+                        @foreach($meal['analyzedInstructions'] as $instruction)
+                            @if(!empty($instruction['name']))
+                                <h6 class="fw-bold text-secondary mt-3 mb-2">{{ $instruction['name'] }}</h6>
+                            @endif
+                            <ol class="list-group list-group-numbered mb-4">
+                                @foreach($instruction['steps'] as $step)
+                                <li class="list-group-item d-flex align-items-start border-0 bg-light rounded mb-2">
+                                    <div class="ms-2">
+                                        <div class="fw-medium text-dark">{{ $step['step'] }}</div>
+                                    </div>
+                                </li>
+                                @endforeach
+                            </ol>
+                        @endforeach
+                    @elseif(!empty($meal['instructions']))
+                        {{-- Fallback: parse instructions menjadi step-by-step --}}
+                        @php
+                            $rawInstructions = $meal['instructions'];
+                            // Hapus HTML tags
+                            $cleanInstructions = strip_tags($rawInstructions);
+                            // Split by nomor (1. 2. 3.) atau line breaks
+                            $steps = preg_split('/(?:\d+[\.\)]\s*|\n+)/', $cleanInstructions, -1, PREG_SPLIT_NO_EMPTY);
+                            // Filter langkah-langkah kosong
+                            $steps = array_filter(array_map('trim', $steps), fn($s) => strlen($s) > 5);
+                            $steps = array_values($steps);
+                        @endphp
+                        
+                        @if(count($steps) > 1)
+                            <ol class="list-group list-group-numbered mb-4">
+                                @foreach($steps as $step)
+                                <li class="list-group-item d-flex align-items-start border-0 bg-light rounded mb-2">
+                                    <div class="ms-2">
+                                        <div class="fw-medium text-dark">{{ $step }}</div>
+                                    </div>
+                                </li>
+                                @endforeach
+                            </ol>
+                        @else
+                            {{-- Jika tidak bisa di-parse, tampilkan sebagai langkah tunggal --}}
+                            <ol class="list-group list-group-numbered mb-4">
+                                <li class="list-group-item d-flex align-items-start border-0 bg-light rounded mb-2">
+                                    <div class="ms-2">
+                                        <div class="fw-medium text-dark">{{ $cleanInstructions }}</div>
+                                    </div>
+                                </li>
+                            </ol>
+                        @endif
                     @else
                         <div class="alert alert-light text-center">
                             <i class="bi bi-info-circle mb-2 d-block fs-3"></i>
