@@ -19,7 +19,6 @@ A smart, AI-powered recipe finder application built with Laravel and YOLOv8 that
   - [Azure App Service Deployment](#azure-app-service-deployment)
 - [How to Use](#-how-to-use)
 - [Technical Details](#️-technical-details)
-- [Troubleshooting](#-troubleshooting)
 - [Contributing](#-contributing)
 
 ---
